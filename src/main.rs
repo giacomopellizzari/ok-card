@@ -98,7 +98,7 @@ fn run_app<B: Backend>(
                         }
                     }
                     KeyCode::Enter => {
-                        if let Some(index) = app.selected_index {
+                        if let Some(_index) = app.selected_index {
                             app.display_decks = false;
                             app.current_screen = CurrentScreen::ViewingDeck;
                         }

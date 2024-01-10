@@ -69,10 +69,10 @@ pub fn ui(f: &mut Frame, app: &App) {
     let mut list_items = Vec::<ListItem>::new();
 
     // add if statement to check that decks is not empty
-    if(app.selected_index.is_some()) {
+    if app.selected_index.is_some() {
         for (index, card) in app.decks[app.selected_index.unwrap_or_default()].cards.iter().enumerate() { //c
-            let mut format = format!("{} - {}", index+1, card.front);
-            let mut style = Style::default().fg(Color::Blue);
+            let format = format!("{} - {}", index+1, card.front);
+            let style = Style::default().fg(Color::Blue);
             list_items.push(ListItem::new(Line::from(Span::styled(
                 format,
                 style,
@@ -203,10 +203,10 @@ pub fn ui(f: &mut Frame, app: &App) {
                 Constraint::Percentage(70),
             ]).split(area);
 
-        let mut name_block =
+        let name_block =
             Block::default().title("Name").borders(Borders::ALL);
 
-        let active_style =
+        let _active_style =
             Style::default().bg(Color::LightYellow).fg(Color::Black);
 
         let name_text = Paragraph::new(app.name_input.clone()).block(name_block);
