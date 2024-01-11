@@ -43,6 +43,7 @@ pub struct Deck { // one deck of cards with a name an a list of cards
 
 pub struct App {
     pub selected_index: Option<usize>, // the currently selected index of the list of decks.
+    pub selected_card_index: Option<usize>, // the currently selected index of the list of cards.
     pub key_input: String, // the currently being edited json key.
     pub value_input: String, // the currently being edited json value.
     pub name_input: String, // the currently being edited deck name.
@@ -61,6 +62,7 @@ impl App {
     pub fn new() -> App {
         App {
             selected_index: None,
+            selected_card_index: None,
             key_input: String::new(),
             value_input: String::new(),
             name_input: String::new(),

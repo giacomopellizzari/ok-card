@@ -109,21 +109,22 @@ fn run_app<B: Backend>(
                     KeyCode::Char('q') => {
                         app.display_decks = true;
                         app.current_screen = CurrentScreen::Main;
+                        app.selected_card_index = None;
                     }
                     KeyCode::Char('k') => {
-                        if let Some(index) = app.selected_index {
+                        if let Some(index) = app.selected_card_index {
                             if index > 0 {
-                                app.selected_index = Some(index - 1);
+                                app.selected_card_index = Some(index - 1);
                             }
                         }
                     }
                     KeyCode::Char('j') => {
-                        if let Some(index) = app.selected_index {
-                            if index < app.decks.len() - 1 {
-                                app.selected_index = Some(index + 1);
+                        if let Some(index) = app.selected_card_index {
+                            if index < app.decks[app.selected_index.unwrap_or_default()].cards.len() - 1 {
+                                app.selected_card_index = Some(index + 1);
                             }
                         } else {
-                            app.selected_index = Some(0);
+                            app.selected_card_index = Some(0);
                         }
                     }
                     KeyCode::Char('a') => {

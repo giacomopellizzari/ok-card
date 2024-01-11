@@ -68,11 +68,15 @@ pub fn ui(f: &mut Frame, app: &App) {
     // Print all of the cards from a list
     let mut list_items = Vec::<ListItem>::new();
 
-    // add if statement to check that decks is not empty
-    if app.selected_index.is_some() {
+    //show the cards in the selected deck
+    if(app.selected_index.is_some()) {
         for (index, card) in app.decks[app.selected_index.unwrap_or_default()].cards.iter().enumerate() { //c
-            let format = format!("{} - {}", index+1, card.front);
-            let style = Style::default().fg(Color::Blue);
+            let mut format = format!("{} - {}", index+1, card.front);
+            let mut style = Style::default().fg(Color::Blue);
+            if Some(index) == app.selected_card_index {
+                format = format!("{} - {} <-", index+1, card.front);
+                style = Style::default().fg(Color::White);
+            }
             list_items.push(ListItem::new(Line::from(Span::styled(
                 format,
                 style,
@@ -203,10 +207,10 @@ pub fn ui(f: &mut Frame, app: &App) {
                 Constraint::Percentage(70),
             ]).split(area);
 
-        let name_block =
+        let mut name_block =
             Block::default().title("Name").borders(Borders::ALL);
 
-        let _active_style =
+        let active_style =
             Style::default().bg(Color::LightYellow).fg(Color::Black);
 
         let name_text = Paragraph::new(app.name_input.clone()).block(name_block);
@@ -244,6 +248,7 @@ pub fn ui(f: &mut Frame, app: &App) {
                 card_back_block = card_back_block.style(active_style)
             }
         };
+        
 
         let card_front_text = Paragraph::new(app.front_input.clone()).block(card_front_block);
         f.render_widget(card_front_text, popup_chunks[0]);
