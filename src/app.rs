@@ -1,6 +1,7 @@
 use serde_json::Result;
 use std::collections::HashMap;
 use chrono::{DateTime, Utc};
+use rand::Rng;
 
 pub enum CurrentScreen {
     Main,
@@ -8,10 +9,11 @@ pub enum CurrentScreen {
     AddingDeck,
     ViewingDeck,
     EditingCard,
+    LearningMode,
     Exiting,
 }
 
-pub enum CardCurrentlyEditing {
+pub enum CardFace {
     CardFront,
     CardBack,
 }
@@ -53,9 +55,11 @@ pub struct App {
     pub pairs: HashMap<String, String>, // The representation of our key and value pairs with serde Serialize support
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub currently_editing: Option<CurrentlyEditing>, // the optional state containing which of the key or value pair the user is editing. It is an option, because when the user is not directly editing a key-value pair, this will be set to `None`.
-    pub card_currently_editing: Option<CardCurrentlyEditing>, // the optional state containing which of the card's front or back the user is editing. It is an option, because when the user is not directly editing a card, this will be set to `None`.
+    pub card_currently_editing: Option<CardFace>, // the optional state containing which of the card's front or back the user is editing. It is an option, because when the user is not directly editing a card, this will be set to `None`.
     pub adding_deck: bool, // the boolean state containing whether the user is adding a deck or not.
     pub display_decks: bool, // the boolean state containing whether the user is displaying a deck or not.
+    pub card_currently_learning: Option<usize>,
+    pub face_showing: Option<CardFace>,
 }
 
 impl App {
@@ -75,6 +79,8 @@ impl App {
             card_currently_editing: None,
             adding_deck: false,
             display_decks: true,
+            card_currently_learning: None,
+            face_showing: None,
         }
     }
 
@@ -86,6 +92,23 @@ impl App {
         if let Some(index) = self.selected_index {
             self.decks[index].cards.push(Card { front: self.front_input.clone(), back: self.back_input.clone(), last_guess: Guess::None });
         }
+    }
+
+    pub fn next_card_to_learn(&mut self) {
+        self.face_showing = Some(CardFace::CardFront);
+    
+        let mut rng = rand::thread_rng();
+        let mut card_index = rng.gen_range(0..self.decks[self.selected_index.unwrap_or(0)].cards.len());
+        self.card_currently_learning = Some(card_index);
+
+        // if let Some(index) = self.selected_index {
+        //     let mut rng = rand::thread_rng();
+        //     let mut card_index = rng.gen_range(0..self.decks[index].cards.len());
+        //     while card_index == self.card_currently_learning.unwrap_or(card_index) {
+        //         card_index = rng.gen_range(0..self.decks[index].cards.len());
+        //     }
+        //     self.card_currently_learning = Some(card_index);
+        // }
     }
 
     pub fn save_key_value(&mut self) {
@@ -100,15 +123,15 @@ impl App {
     pub fn toggle_card_currently_editing(&mut self) {
         if let Some(edit_mode) = &self.card_currently_editing {
             match edit_mode {
-                CardCurrentlyEditing::CardFront => {
-                    self.card_currently_editing = Some(CardCurrentlyEditing::CardBack)
+                CardFace::CardFront => {
+                    self.card_currently_editing = Some(CardFace::CardBack)
                 }
-                CardCurrentlyEditing::CardBack => {
-                    self.card_currently_editing = Some(CardCurrentlyEditing::CardFront)
+                CardFace::CardBack => {
+                    self.card_currently_editing = Some(CardFace::CardFront)
                 }
             };
         } else {
-            self.card_currently_editing = Some(CardCurrentlyEditing::CardFront);
+            self.card_currently_editing = Some(CardFace::CardFront);
         }
     }
 

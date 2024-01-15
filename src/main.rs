@@ -19,7 +19,7 @@ use ratatui::{
 mod app;
 mod ui;
 use crate::{
-    app::{App, CurrentScreen, CurrentlyEditing, CardCurrentlyEditing},
+    app::{App, CurrentScreen, CurrentlyEditing, CardFace},
     ui::ui,
 };
 
@@ -128,8 +128,43 @@ fn run_app<B: Backend>(
                         }
                     }
                     KeyCode::Char('a') => {
-                        app.card_currently_editing = Some(CardCurrentlyEditing::CardFront);
+                        app.card_currently_editing = Some(CardFace::CardFront);
                         app.current_screen = CurrentScreen::EditingCard;
+                    }
+                    KeyCode::Char('s') => {
+                        app.selected_card_index = None;
+                        app.next_card_to_learn();
+                        app.current_screen = CurrentScreen::LearningMode;
+                    }
+                    _ => {}
+                },
+                CurrentScreen::LearningMode => match key.code {
+                    KeyCode::Char(' ') | KeyCode::Enter => {
+                        if let Some(face_showing) = &app.face_showing {
+                            match face_showing {
+                                CardFace::CardFront => {
+                                    app.face_showing = Some(CardFace::CardBack);
+                                }
+                                CardFace::CardBack => {
+                                }
+                            }
+                        }
+                    }
+                    KeyCode::Char('h') => {
+                        app.next_card_to_learn();
+                    }
+                    KeyCode::Char('k') => {
+                        app.next_card_to_learn();
+                    }
+                    KeyCode::Char('j') => {
+                        app.next_card_to_learn();
+                    }
+                    KeyCode::Char('e') => {
+                        app.current_screen = CurrentScreen::EditingCard;
+                    }
+                    KeyCode::Char('q') => {
+                        app.current_screen = CurrentScreen::ViewingDeck;
+                        app.selected_card_index = None;
                     }
                     _ => {}
                 },
@@ -167,10 +202,10 @@ fn run_app<B: Backend>(
                     KeyCode::Enter => {
                         if let Some(editing) = &app.card_currently_editing {
                             match editing {
-                                CardCurrentlyEditing::CardFront => {
-                                    app.card_currently_editing = Some(CardCurrentlyEditing::CardBack);
+                                CardFace::CardFront => {
+                                    app.card_currently_editing = Some(CardFace::CardBack);
                                 }
-                                CardCurrentlyEditing::CardBack => {
+                                CardFace::CardBack => {
                                     app.add_card();
                                     app.front_input = String::new();
                                     app.back_input = String::new();
@@ -184,10 +219,10 @@ fn run_app<B: Backend>(
                     KeyCode::Backspace => {
                         if let Some(editing) = &app.card_currently_editing {
                             match editing {
-                                CardCurrentlyEditing::CardFront => {
+                                CardFace::CardFront => {
                                     app.front_input.pop();
                                 }
-                                CardCurrentlyEditing::CardBack => {
+                                CardFace::CardBack => {
                                     app.back_input.pop();
                                 }
                             }
@@ -203,10 +238,10 @@ fn run_app<B: Backend>(
                     KeyCode::Char(value) => {
                         if let Some(editing) = &app.card_currently_editing {
                             match editing {
-                                CardCurrentlyEditing::CardFront => {
+                                CardFace::CardFront => {
                                     app.front_input.push(value);
                                 }
-                                CardCurrentlyEditing::CardBack => {
+                                CardFace::CardBack => {
                                     app.back_input.push(value);
                                 }
                             }

@@ -7,7 +7,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{App, CurrentScreen, CurrentlyEditing, CardCurrentlyEditing};
+use crate::app::{App, CurrentScreen, CurrentlyEditing, CardFace};
 
 pub fn ui(f: &mut Frame, app: &App) {
     // Create the layout sections.
@@ -27,7 +27,7 @@ pub fn ui(f: &mut Frame, app: &App) {
 
     let title = Paragraph::new(Text::styled(
         "OK-CARD",
-        Style::default().fg(Color::Green),
+        Style::default().fg(Color::Yellow).add_modifier(ratatui::style::Modifier::BOLD),
     ))
     .block(title_block).alignment(Alignment::Center);
 
@@ -50,12 +50,12 @@ pub fn ui(f: &mut Frame, app: &App) {
     let deck_title = if app.decks.len() > 0 {
         Paragraph::new(Text::styled(
             "Decks:",
-            Style::default().fg(Color::Green),
+            Style::default().fg(Color::Yellow),
         ))
     } else {
         Paragraph::new(Text::styled(
             "Press (a) to add a deck",
-            Style::default().fg(Color::Green),
+            Style::default().fg(Color::Yellow),
         ))
     };
 
@@ -65,11 +65,11 @@ pub fn ui(f: &mut Frame, app: &App) {
         f.render_widget(list_of_decks, chunks[2]);
     }
     
-    // Print all of the cards from a list
-    let mut list_items = Vec::<ListItem>::new();
 
     //show the cards in the selected deck
-    if(app.selected_index.is_some()) {
+    if let CurrentScreen::ViewingDeck = app.current_screen {
+    // if app.selected_index.is_some() && CurrentScreen::LearningMode != app.current_screen {
+        let mut list_items = Vec::<ListItem>::new();
         for (index, card) in app.decks[app.selected_index.unwrap_or_default()].cards.iter().enumerate() { //c
             let mut format = format!("{} - {}", index+1, card.front);
             let mut style = Style::default().fg(Color::Blue);
@@ -84,14 +84,16 @@ pub fn ui(f: &mut Frame, app: &App) {
         }
 
         let cards_paragraph_heading = if app.decks[app.selected_index.unwrap_or_default()].cards.len() > 0 {
+            let text_title_display = format!("Cards for deck {}", &app.decks[app.selected_index.unwrap_or_default()].name);
             Paragraph::new(Text::styled(
-                "Cards:",
-                Style::default().fg(Color::Green),
+                text_title_display,
+                Style::default().fg(Color::Yellow),
             ))
         } else {
+            let text_title_display = format!("Press (a) to add a card to deck {}", &app.decks[app.selected_index.unwrap_or_default()].name);
             Paragraph::new(Text::styled(
-                "Press (a) to add a card",
-                Style::default().fg(Color::Green),
+                text_title_display,
+                Style::default().fg(Color::Yellow),
             ))
         };
 
@@ -106,16 +108,19 @@ pub fn ui(f: &mut Frame, app: &App) {
         // The first half of the text
         match app.current_screen {
             CurrentScreen::Main => {
-                Span::styled("Showing Decks", Style::default().fg(Color::Green))
+                Span::styled("Showing Decks", Style::default().fg(Color::Yellow))
             }
             CurrentScreen::AddingDeck => {
-                Span::styled("Adding Deck", Style::default().fg(Color::Red))
+                Span::styled("Adding Deck", Style::default().fg(Color::Yellow))
             }
             CurrentScreen::ViewingDeck => {
-                Span::styled("Viewing Deck", Style::default().fg(Color::Blue))
+                Span::styled("Viewing Deck", Style::default().fg(Color::Yellow))
             }
             CurrentScreen::EditingCard => {
-                Span::styled("Editing Card", Style::default().fg(Color::LightBlue))
+                Span::styled("Editing Card", Style::default().fg(Color::Yellow))
+            }
+            CurrentScreen::LearningMode => {
+                Span::styled("Learning Mode", Style::default().fg(Color::Yellow))
             }
             CurrentScreen::Editing => {
                 Span::styled("Editing Mode", Style::default().fg(Color::Yellow))
@@ -155,24 +160,28 @@ pub fn ui(f: &mut Frame, app: &App) {
     let current_keys_hint = {
         match app.current_screen {
             CurrentScreen::Main => Span::styled(
-                "(q) quit / (a) to add deck",
-                Style::default().fg(Color::Red),
+                "(q) quit / (a) add deck",
+                Style::default().fg(Color::Yellow),
             ),
             CurrentScreen::AddingDeck => Span::styled(
                 "(ESC) cancel/ (ENTER) complete",
-                Style::default().fg(Color::Red),
+                Style::default().fg(Color::Yellow),
             ),
             CurrentScreen::ViewingDeck => Span::styled(
-                "(q) to quit / (a) to add card",
-                Style::default().fg(Color::Red),
+                "(q) back/ (a) add card",
+                Style::default().fg(Color::Yellow),
             ),
             CurrentScreen::EditingCard => Span::styled(
                 "(ESC) cancel/ (ENTER) complete",
-                Style::default().fg(Color::Red),
+                Style::default().fg(Color::Yellow),
+            ),
+            CurrentScreen::LearningMode => Span::styled(
+                "(q) back",
+                Style::default().fg(Color::Yellow),
             ),
             CurrentScreen::Editing => Span::styled(
                 "(ESC) cancel/ (Tab) move/ (ENTER) complete",
-                Style::default().fg(Color::Red),
+                Style::default().fg(Color::Yellow),
             ),
             CurrentScreen::Exiting => Span::styled(
                 "(q) quit",
@@ -181,6 +190,7 @@ pub fn ui(f: &mut Frame, app: &App) {
         }
     };
 
+    //display the footer
     let key_notes_footer = Paragraph::new(Line::from(current_keys_hint))
         .block(Block::default().borders(Borders::ALL));
 
@@ -192,11 +202,12 @@ pub fn ui(f: &mut Frame, app: &App) {
     f.render_widget(mode_footer, footer_chunks[0]);
     f.render_widget(key_notes_footer, footer_chunks[1]);
 
+    //display the adding of the deck
     if app.adding_deck {
         let popup_block = Block::default()
             .title("Enter name of new deck:")
             .borders(Borders::NONE)
-            .style(Style::default().bg(Color::DarkGray));
+            .style(Style::default().bg(Color::Black).fg(Color::Yellow));
 
         let area = centered_rect(60, 25, f.size());
         f.render_widget(popup_block, area);
@@ -207,21 +218,22 @@ pub fn ui(f: &mut Frame, app: &App) {
                 Constraint::Percentage(70),
             ]).split(area);
 
-        let mut name_block =
+        let name_block =
             Block::default().title("Name").borders(Borders::ALL);
 
-        let active_style =
+        let _active_style =
             Style::default().bg(Color::LightYellow).fg(Color::Black);
 
         let name_text = Paragraph::new(app.name_input.clone()).block(name_block);
         f.render_widget(name_text, popup_chunks[0]);
     }
 
+    // display the cards being added/edited
     if let Some(editing) = &app.card_currently_editing {
         let popup_block = Block::default()
             .title("Enter card information")
             .borders(Borders::NONE)
-            .style(Style::default().bg(Color::DarkGray));
+            .style(Style::default().bg(Color::Black).fg(Color::Yellow));
 
         let area = centered_rect(60, 25, f.size());
         f.render_widget(popup_block, area);
@@ -243,8 +255,8 @@ pub fn ui(f: &mut Frame, app: &App) {
             Style::default().bg(Color::LightYellow).fg(Color::Black);
 
         match editing {
-            CardCurrentlyEditing::CardFront => card_front_block = card_front_block.style(active_style),
-            CardCurrentlyEditing::CardBack => {
+            CardFace::CardFront => card_front_block = card_front_block.style(active_style),
+            CardFace::CardBack => {
                 card_back_block = card_back_block.style(active_style)
             }
         };
@@ -258,6 +270,7 @@ pub fn ui(f: &mut Frame, app: &App) {
         f.render_widget(card_back_text, popup_chunks[1]);
     }
 
+    //TODO: Delete this
     if let Some(editing) = &app.currently_editing {
         let popup_block = Block::default()
             .title("Enter a new key-value pair")
@@ -296,6 +309,75 @@ pub fn ui(f: &mut Frame, app: &App) {
         let value_text =
             Paragraph::new(app.value_input.clone()).block(value_block);
         f.render_widget(value_text, popup_chunks[1]);
+    }
+    
+    //display the cards being learned
+    if let CurrentScreen::LearningMode = app.current_screen {
+        let learning_area_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(3), Constraint::Min(3), Constraint::Length(3)])
+            .split(chunks[2]);
+
+        let commands_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(33), Constraint::Percentage(33), Constraint::Percentage(33)])
+            .split(learning_area_chunks[2]);
+
+        let mut front_card_block = Block::default().borders(Borders::NONE);
+        let mut back_card_block = Block::default().borders(Borders::ALL);
+
+        let front_text = Text::styled(
+            app.decks[app.selected_index.unwrap_or_default()].cards[app.card_currently_learning.unwrap_or_default()].front.clone(),
+            Style::default().fg(Color::Blue).add_modifier(ratatui::style::Modifier::BOLD),
+        );
+
+        let back_text = Text::styled(
+            app.decks[app.selected_index.unwrap_or_default()].cards[app.card_currently_learning.unwrap_or_default()].back.clone(),
+            Style::default().fg(Color::Blue),
+        );
+
+        let card_name_paragraph = Paragraph::new(front_text)
+            .block(front_card_block)
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: false });
+
+        let card_back_paragraph = Paragraph::new(back_text)
+            .block(back_card_block)
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: false });
+
+        let mut command_incorrect_paragraph = Paragraph::new(Text::styled(
+            "(h) incorrect",
+            Style::default().fg(Color::Red),
+        )).alignment(Alignment::Center);
+        let mut command_correct_paragraph = Paragraph::new(Text::styled(
+            "(j) correct",
+            Style::default().fg(Color::Yellow),
+        )).alignment(Alignment::Center);
+        let mut command_easy_paragraph = Paragraph::new(Text::styled(
+            "(k) easy",
+            Style::default().fg(Color::Green),
+        )).alignment(Alignment::Center);
+        let mut command_show_back_paragraph = Paragraph::new(Text::styled(
+            "press (ENTER) to reveal the back of the card",
+            Style::default().fg(Color::Yellow),
+        )).alignment(Alignment::Center);
+
+        f.render_widget(card_name_paragraph, learning_area_chunks[0]);
+        
+        if let Some(face_showing) = &app.face_showing {
+            match face_showing {
+                CardFace::CardFront => {
+                    f.render_widget(command_show_back_paragraph, commands_chunks[1]);
+                }
+                CardFace::CardBack => {
+                    f.render_widget(card_back_paragraph, learning_area_chunks[1]);
+                    f.render_widget(command_incorrect_paragraph, commands_chunks[0]);
+                    f.render_widget(command_correct_paragraph, commands_chunks[1]);
+                    f.render_widget(command_easy_paragraph, commands_chunks[2]);
+                }
+            };
+        }
     }
 
     if let CurrentScreen::Exiting = app.current_screen {
