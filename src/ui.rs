@@ -7,7 +7,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{App, CurrentScreen, CurrentlyEditing, CardFace};
+use crate::app::{App, CurrentScreen, CardFace};
 
 pub struct ColorScheme {
     pub title: Color,
@@ -89,7 +89,6 @@ pub fn ui(f: &mut Frame, app: &App) {
 
     //show the cards in the selected deck
     if let CurrentScreen::ViewingDeck = app.current_screen {
-    // if app.selected_index.is_some() && CurrentScreen::LearningMode != app.current_screen {
         let mut list_items = Vec::<ListItem>::new();
         for (index, card) in app.decks[app.selected_index.unwrap_or_default()].cards.iter().enumerate() { //c
             let mut format = format!("{} - {}", index+1, card.front);
@@ -143,9 +142,6 @@ pub fn ui(f: &mut Frame, app: &App) {
             CurrentScreen::LearningMode => {
                 Span::styled("Learning Mode", Style::default().fg(color_scheme.title))
             }
-            CurrentScreen::Editing => {
-                Span::styled("Editing Mode", Style::default().fg(color_scheme.title))
-            }
             CurrentScreen::Exiting => {
                 Span::styled("Exiting", Style::default().fg(color_scheme.warning))
             }
@@ -155,23 +151,7 @@ pub fn ui(f: &mut Frame, app: &App) {
         Span::styled(" | ", Style::default().fg(color_scheme.selected)),
         // The final section of the text, with hints on what the user is editing
         {
-            if let Some(editing) = &app.currently_editing {
-                match editing {
-                    CurrentlyEditing::Key => Span::styled(
-                        "Editing Json Key",
-                        Style::default().fg(Color::Green),
-                    ),
-                    CurrentlyEditing::Value => Span::styled(
-                        "Editing Json Value",
-                        Style::default().fg(Color::LightGreen),
-                    ),
-                }
-            } else {
-                Span::styled(
-                    "Not Editing Anything",
-                    Style::default().fg(Color::DarkGray),
-                )
-            }
+            Span::styled("Editing", Style::default().fg(color_scheme.title))
         },
     ];
 
@@ -198,10 +178,6 @@ pub fn ui(f: &mut Frame, app: &App) {
             ),
             CurrentScreen::LearningMode => Span::styled(
                 "(q) back",
-                Style::default().fg(color_scheme.title),
-            ),
-            CurrentScreen::Editing => Span::styled(
-                "(ESC) cancel/ (Tab) move/ (ENTER) complete",
                 Style::default().fg(color_scheme.title),
             ),
             CurrentScreen::Exiting => Span::styled(
@@ -290,47 +266,6 @@ pub fn ui(f: &mut Frame, app: &App) {
             Paragraph::new(app.back_input.clone()).block(card_back_block);
         f.render_widget(card_back_text, popup_chunks[1]);
     }
-
-    //TODO: Delete this
-    if let Some(editing) = &app.currently_editing {
-        let popup_block = Block::default()
-            .title("Enter a new key-value pair")
-            .borders(Borders::NONE)
-            .style(Style::default().bg(Color::DarkGray));
-
-        let area = centered_rect(60, 25, f.size());
-        f.render_widget(popup_block, area);
-
-        let popup_chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .margin(1)
-            .constraints([
-                Constraint::Percentage(50),
-                Constraint::Percentage(50),
-            ])
-            .split(area);
-
-        let mut key_block = Block::default().title("Key").borders(Borders::ALL);
-        let mut value_block =
-            Block::default().title("Value").borders(Borders::ALL);
-
-        let active_style =
-            Style::default().bg(Color::LightYellow).fg(Color::Black);
-
-        match editing {
-            CurrentlyEditing::Key => key_block = key_block.style(active_style),
-            CurrentlyEditing::Value => {
-                value_block = value_block.style(active_style)
-            }
-        };
-
-        let key_text = Paragraph::new(app.key_input.clone()).block(key_block);
-        f.render_widget(key_text, popup_chunks[0]);
-
-        let value_text =
-            Paragraph::new(app.value_input.clone()).block(value_block);
-        f.render_widget(value_text, popup_chunks[1]);
-    }
     
     //display the cards being learned
     if let CurrentScreen::LearningMode = app.current_screen {
@@ -344,8 +279,8 @@ pub fn ui(f: &mut Frame, app: &App) {
             .constraints([Constraint::Percentage(33), Constraint::Percentage(33), Constraint::Percentage(33)])
             .split(learning_area_chunks[2]);
 
-        let mut front_card_block = Block::default().borders(Borders::NONE);
-        let mut back_card_block = Block::default().borders(Borders::ALL);
+        let front_card_block = Block::default().borders(Borders::NONE);
+        let back_card_block = Block::default().borders(Borders::ALL);
 
         let front_text = Text::styled(
             app.decks[app.selected_index.unwrap_or_default()].cards[app.card_currently_learning.unwrap_or_default()].front.clone(),
@@ -367,19 +302,19 @@ pub fn ui(f: &mut Frame, app: &App) {
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: false });
 
-        let mut command_incorrect_paragraph = Paragraph::new(Text::styled(
+        let command_incorrect_paragraph = Paragraph::new(Text::styled(
             "(h) incorrect",
             Style::default().fg(color_scheme.warning),
         )).alignment(Alignment::Center);
-        let mut command_correct_paragraph = Paragraph::new(Text::styled(
+        let command_correct_paragraph = Paragraph::new(Text::styled(
             "(j) correct",
             Style::default().fg(color_scheme.title),
         )).alignment(Alignment::Center);
-        let mut command_easy_paragraph = Paragraph::new(Text::styled(
+        let command_easy_paragraph = Paragraph::new(Text::styled(
             "(k) easy",
             Style::default().fg(Color::Green),
         )).alignment(Alignment::Center);
-        let mut command_show_back_paragraph = Paragraph::new(Text::styled(
+        let command_show_back_paragraph = Paragraph::new(Text::styled(
             "press (ENTER) to reveal the back of the card",
             Style::default().fg(color_scheme.title),
         )).alignment(Alignment::Center);
