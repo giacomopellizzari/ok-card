@@ -3,7 +3,6 @@ use std::{error::Error, io};
 use crossterm::{
     event::{
         self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode,
-        KeyEventKind,
     },
     execute,
     terminal::{

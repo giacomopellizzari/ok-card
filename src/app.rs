@@ -12,6 +12,7 @@ pub enum CurrentScreen {
     Exiting,
 }
 
+#[derive(Clone, Copy)]
 pub enum CardFace {
     CardFront,
     CardBack,
